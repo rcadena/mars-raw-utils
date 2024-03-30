@@ -1,10 +1,13 @@
-use crate::subs::runnable::RunnableSubcommand;
+use std::process;
+
 use anyhow::Result;
 use clap::Parser;
+use sciimg::path;
+
 use mars_raw_utils::m20::fetch::M20Fetch as M20FetchClient;
 use mars_raw_utils::prelude::*;
-use sciimg::path;
-use std::process;
+
+use crate::subs::runnable::RunnableSubcommand;
 
 pb_create!();
 
@@ -149,12 +152,8 @@ impl RunnableSubcommand for M20Fetch {
                 product_types,
                 output_path: output,
             },
-            |total| {
-                pb_set_length!(total);
-            },
-            |_| {
-                pb_inc!();
-            },
+            |total| pb_set_length!(total),
+            |_| pb_inc!(),
         )
         .await
         {

@@ -1,10 +1,14 @@
-use crate::subs::runnable::RunnableSubcommand;
+use std::process;
+
 use anyhow::Result;
 use clap::Parser;
+use sciimg::path;
+
+use mars_raw_utils::metadata::Metadata;
 use mars_raw_utils::nsyt::fetch::NsytFetch as NsytFetchClient;
 use mars_raw_utils::prelude::*;
-use sciimg::path;
-use std::process;
+
+use crate::subs::runnable::RunnableSubcommand;
 
 pb_create!();
 
@@ -125,6 +129,14 @@ impl RunnableSubcommand for NsytFetch {
             Ok(v) => v,
         };
 
+        let cb_on_total_known = |total: usize| {
+            pb_set_length!(total);
+        };
+
+        let cb_on_image_downloaded = |_: &Metadata| {
+            pb_inc!();
+        };
+
         match remotequery::perform_fetch(
             &client,
             &remotequery::RemoteQuery {
@@ -141,12 +153,8 @@ impl RunnableSubcommand for NsytFetch {
                 product_types: vec![],
                 output_path: output,
             },
-            |total| {
-                pb_set_length!(total);
-            },
-            |_| {
-                pb_inc!();
-            },
+            cb_on_total_known,
+            cb_on_image_downloaded,
         )
         .await
         {

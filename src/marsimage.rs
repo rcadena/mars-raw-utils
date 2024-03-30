@@ -1,11 +1,12 @@
-use crate::{decompanding::LookUpTable, enums, flatfield, inpaintmask, metadata::*, util};
+use std::env;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use sciimg::{
     debayer::DebayerMethod, drawable::Drawable, enums::ImageMode, image::Image,
     imagebuffer::ImageBuffer, inpaint, path, DnVec, VecMath,
 };
-use std::env;
+
+use crate::{decompanding::LookUpTable, enums, flatfield, inpaintmask, metadata::*, util};
 
 #[derive(Clone)]
 pub struct MarsImage {
@@ -98,10 +99,10 @@ impl MarsImage {
             info!("File saved.");
             Ok(())
         } else {
-            Err(anyhow!(
+            Err(Error::msg(format!(
                 "Parent does not exist or cannot be written: {}",
                 path::get_parent(to_file)
-            ))
+            )))
         }
     }
 

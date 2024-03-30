@@ -66,7 +66,7 @@ macro_rules! pb_set_print {
 #[macro_export]
 macro_rules! pb_set_length {
     ($x: expr) => {
-        PB.set_length($x as u64);
+        PB.set_length($x as u64)
     };
 }
 

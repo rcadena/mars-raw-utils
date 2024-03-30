@@ -181,8 +181,7 @@ impl Calibration for M20MastcamZ {
 
         info!(
             "Current image width: {}, height: {}",
-            raw.image.width,
-            raw.image.height
+            raw.image.width, raw.image.height
         );
 
         info!("Cropping...");
@@ -204,8 +203,7 @@ impl Calibration for M20MastcamZ {
 
         info!(
             "Current image width: {}, height: {}",
-            raw.image.width,
-            raw.image.height
+            raw.image.width, raw.image.height
         );
 
         if cal_context.srgb_color_correction {
