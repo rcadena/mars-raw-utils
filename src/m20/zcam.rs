@@ -68,7 +68,7 @@ impl Calibration for M20MastcamZ {
     ) -> Result<CompleteContext> {
         let out_file = util::append_file_name(input_file, cal_context.filename_suffix.as_str());
         if path::file_exists(&out_file) && only_new {
-            vprintln!("Output file exists, skipping. ({})", out_file);
+            warn!("Output file exists, skipping. ({})", out_file);
             return cal_warn(cal_context, &out_file);
         }
 
@@ -78,16 +78,16 @@ impl Calibration for M20MastcamZ {
         let bn = path::basename(input_file);
         if bn.chars().nth(1).unwrap() == 'R' {
             instrument = Instrument::M20MastcamZRight;
-            vprintln!("Processing for Mastcam-Z Right");
+            info!("Processing for Mastcam-Z Right");
         } else {
             instrument = Instrument::M20MastcamZLeft;
-            vprintln!("Processing for Mastcam-Z Left");
+            info!("Processing for Mastcam-Z Left");
         }
 
         let mut raw = MarsImage::open(input_file, instrument);
 
         let data_max = if cal_context.apply_ilt {
-            vprintln!("Decompanding...");
+            info!("Decompanding...");
             let lut = decompanding::get_ilt_for_instrument(instrument).unwrap();
             raw.decompand(&lut);
             lut.max() as f32
@@ -99,7 +99,7 @@ impl Calibration for M20MastcamZ {
         // Update: Not always. Added a check to determine whether or not is is grayscale.
         // It's not perfect so please validate results. Gonna keep the 'ECM' check for now.
         if input_file.contains("ECM") && raw.image.is_grayscale() {
-            vprintln!("Image appears to be grayscale, applying debayering...");
+            info!("Image appears to be grayscale, applying debayering...");
             raw.debayer_with_method(cal_context.debayer_method);
         }
 
@@ -117,50 +117,47 @@ impl Calibration for M20MastcamZ {
             }
         };
 
-        match focal_length {
-            Ok(fl) => {
-                // Do flat fielding
-                vprintln!("Flatfielding...");
-                vprintln!("Determined camera focal length at {}mm", fl);
+        info!("Determining if we can flat field the image...");
+        if let Ok(fl) = focal_length {
+            // Do flat fielding
+            info!("Flatfielding...");
+            info!("Determined camera focal length at {}mm", fl);
 
-                let calfile = calibfile::get_calibration_file_for_instrument(
-                    instrument,
-                    enums::CalFileType::FlatField,
-                )
-                .unwrap();
+            let calfile = calibfile::get_calibration_file_for_instrument(
+                instrument,
+                enums::CalFileType::FlatField,
+            )?;
 
-                let motor_stop = motor_stop_from_focal_length(fl);
-                let motor_stop_str = format!("{:04}", motor_stop);
-                let file_path = calfile.replace("-motorcount-", motor_stop_str.as_str());
+            let motor_stop = motor_stop_from_focal_length(fl);
+            let motor_stop_str = format!("{:04}", motor_stop);
+            let file_path = calfile.replace("-motorcount-", motor_stop_str.as_str());
 
-                vprintln!("Using flat file: {}", file_path);
+            info!("Using flat file: {}", file_path);
 
-                if path::file_exists(&file_path) {
-                    let mut flat = MarsImage::open(&file_path, instrument);
+            if path::file_exists(&file_path) {
+                let mut flat = MarsImage::open(&file_path, instrument);
 
-                    if let Some(rect) = &raw.metadata.subframe_rect {
-                        flat.crop(
-                            rect[0] as usize - 1,
-                            rect[1] as usize - 1,
-                            rect[2] as usize,
-                            rect[3] as usize,
-                        );
-                    }
-
-                    raw.flatfield_with_flat(&flat);
-                } else {
-                    eprintln!("Flat file not found: {}", file_path);
-                    // print_fail(&format!("{} ({})", path::basename(input_file), filename_suffix));
-                    panic!("Flat file not found!");
+                if let Some(rect) = &raw.metadata.subframe_rect {
+                    flat.crop(
+                        rect[0] as usize - 1,
+                        rect[1] as usize - 1,
+                        rect[2] as usize,
+                        rect[3] as usize,
+                    );
                 }
-            }
-            Err(e) => {
-                warn = true;
-                vprintln!("Could not determine focal length: {}", e)
-            }
-        };
 
-        vprintln!("Inpainting...");
+                raw.flatfield_with_flat(&flat);
+            } else {
+                eprintln!("Flat file not found: {}", file_path);
+                // print_fail(&format!("{} ({})", path::basename(input_file), filename_suffix));
+                panic!("Flat file not found!");
+            }
+        } else if let Err(e) = focal_length {
+            warn = true;
+            warn!("Could not determine focal length: {}", e)
+        }
+
+        info!("Inpainting...");
         let mut inpaint_mask = inpaintmask::load_mask(instrument).unwrap();
         if let Some(rect) = &raw.metadata.subframe_rect {
             inpaint_mask = inpaint_mask
@@ -175,20 +172,20 @@ impl Calibration for M20MastcamZ {
 
         raw.apply_inpaint_fix_with_mask(&inpaint_mask);
 
-        vprintln!("Applying color weights...");
+        info!("Applying color weights...");
         raw.apply_weight(
             cal_context.red_scalar,
             cal_context.green_scalar,
             cal_context.blue_scalar,
         );
 
-        vprintln!(
+        info!(
             "Current image width: {}, height: {}",
             raw.image.width,
             raw.image.height
         );
 
-        vprintln!("Cropping...");
+        info!("Cropping...");
 
         if cal_context.auto_subframing {
             if let Some(rect) = &raw.metadata.subframe_rect {
@@ -205,27 +202,27 @@ impl Calibration for M20MastcamZ {
                 .crop(29, 9, raw.image.width - 29 - 29, raw.image.height - 9 - 9);
         }
 
-        vprintln!(
+        info!(
             "Current image width: {}, height: {}",
             raw.image.width,
             raw.image.height
         );
 
         if cal_context.srgb_color_correction {
-            vprintln!("Applying sRGB color conversion");
+            info!("Applying sRGB color conversion");
             raw.image
                 .convert_colorspace(color::ColorSpaceType::RGB, color::ColorSpaceType::sRGB)?;
         }
 
         if cal_context.decorrelate_color {
-            vprintln!("Normalizing with decorrelated colors...");
+            info!("Normalizing with decorrelated colors...");
             raw.image.normalize_to_16bit_decorrelated();
         } else {
-            vprintln!("Normalizing with correlated colors...");
+            info!("Normalizing with correlated colors...");
             raw.image.normalize_to_16bit_with_max(data_max);
         }
 
-        vprintln!("Writing to {}", out_file);
+        info!("Writing to {}", out_file);
         raw.update_history();
         match raw.save(&out_file) {
             Ok(_) => match warn {
@@ -233,7 +230,7 @@ impl Calibration for M20MastcamZ {
                 false => cal_ok(cal_context, &out_file),
             },
             Err(why) => {
-                veprintln!("Error saving file: {}", why);
+                error!("Error saving file: {}", why);
                 cal_fail(cal_context, &out_file)
             }
         }
