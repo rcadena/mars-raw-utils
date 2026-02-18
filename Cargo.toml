@@ -1,6 +1,6 @@
 [package]
 name = "mars_raw_utils"
-version = "0.8.2"
+version = "0.8.3"
 authors = ["Kevin M. Gill <apoapsys@gmail.com>"]
 edition = "2021"
 description = "Utilities for working with publicly available raw MSL, Mars2020, and InSight images"
@@ -119,7 +119,7 @@ string-builder = "0.2.0"
 sciimg = { git = "https://github.com/MarsRaw/sciimg.git", branch = "kmgill_develop", features = [
     "rayon",
 ] }
-#sciimg = {path = "../sciimg"}
+#sciimg = {path = "../sciimg", features = [ "rayon", ]}
 stump = { git = "https://github.com/MarsRaw/stump.git" }
 vicar = { git = "https://github.com/MarsRaw/vicar-rs.git" }
 weezl = "0.1.5"
@@ -147,3 +147,7 @@ itertools = "0.14.0"
 futures = "0.3.28"
 dng = "1.5.0"
 clap_complete = "4.3.1"
+
+
+[patch.crates-io]
+jpeg-decoder = { git = "https://github.com/kmgill/jpeg-decoder.git", branch = "optional-zero-ac63" }
