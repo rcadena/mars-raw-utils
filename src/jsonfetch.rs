@@ -9,10 +9,7 @@ pub struct JsonFetcher {
 impl JsonFetcher {
     pub fn new(uri: &str) -> Result<JsonFetcher> {
         Ok(JsonFetcher {
-            fetcher: match HttpFetcher::new(uri) {
-                Ok(it) => it,
-                Err(err) => return Err(err),
-            },
+            fetcher: HttpFetcher::new(uri)?,
         })
     }
 

@@ -1,5 +1,5 @@
 use crate::jsonfetch;
-use crate::serializers::{as_df_date, as_f32, as_i32};
+use crate::serializers::{as_df_date, as_f32, as_i32, none_on_error};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -17,11 +17,14 @@ pub struct MedaSol {
 
     pub season: String,
 
-    pub min_temp: f32,
+    #[serde(default, deserialize_with = "none_on_error")]
+    pub min_temp: Option<f32>,
 
-    pub max_temp: f32,
+    #[serde(default, deserialize_with = "none_on_error")]
+    pub max_temp: Option<f32>,
 
-    pub pressure: f32,
+    #[serde(default, deserialize_with = "none_on_error")]
+    pub pressure: Option<f32>,
 
     pub sunrise: String,
 

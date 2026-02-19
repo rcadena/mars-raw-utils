@@ -17,8 +17,8 @@ pub struct MslWeather {
 }
 
 fn format_if_some<T: Display>(v: Option<T>) -> String {
-    if v.is_some() {
-        format!("{}", v.unwrap())
+    if let Some(v) = v {
+        format!("{}", v)
     } else {
         "--".to_string()
     }

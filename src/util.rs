@@ -71,9 +71,9 @@ macro_rules! min {
     }}
 }
 
-////////////////////////////////////
-/// Functions for supporting instrument lists
-////////////////////////////////////
+// ////////////////////////////////////
+// /// Functions for supporting instrument lists
+// ////////////////////////////////////
 
 pub struct InstrumentMap {
     pub map: HashMap<&'static str, Vec<&'static str>>,

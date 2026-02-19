@@ -178,31 +178,19 @@ impl ImageMetadata for ImageRecord {
     }
 
     fn get_drive(&self) -> Option<u32> {
-        match self.drive.parse::<u32>() {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        }
+        self.drive.parse::<u32>().ok()
     }
 
     fn get_mast_az(&self) -> Option<f64> {
-        match self.extended.mast_az.parse::<f64>() {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        }
+        self.extended.mast_az.parse::<f64>().ok()
     }
 
     fn get_mast_el(&self) -> Option<f64> {
-        match self.extended.mast_el.parse::<f64>() {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        }
+        self.extended.mast_el.parse::<f64>().ok()
     }
 
     fn get_sclk(&self) -> Option<f64> {
-        match self.extended.sclk.parse::<f64>() {
-            Ok(v) => Some(v),
-            Err(_) => None,
-        }
+        self.extended.sclk.parse::<f64>().ok()
     }
 
     fn is_thumbnail(&self) -> bool {

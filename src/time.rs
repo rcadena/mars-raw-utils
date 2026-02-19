@@ -76,7 +76,7 @@ pub fn get_lmst_from_epoch_secs(epoch: f64, longitude: f64) -> Result<MissionTim
     let j2000_land = jd_tt_land - 2451545.0 + 0.00014;
     let sol_offset = ((j2000_land - 4.5) / 1.027491252) + 44796.0 - 0.00096;
 
-    get_time(-1.0 * sol_offset, longitude, TimeSystem::LMST)
+    get_time(-sol_offset, longitude, TimeSystem::LMST)
 }
 
 fn cos(v: f64) -> f64 {

@@ -18,9 +18,18 @@ fn print_csv(meda_list: &[MedaSol]) {
             "{},{},{},{},{},{},{},{}",
             w.terrestrial_date,
             w.sol,
-            w.max_temp,
-            w.min_temp,
-            w.pressure,
+            match w.max_temp {
+                Some(temp) => format!("{}", temp),
+                None => "".to_string(),
+            },
+            match w.min_temp {
+                Some(temp) => format!("{}", temp),
+                None => "".to_string(),
+            },
+            match w.pressure {
+                Some(pressure) => format!("{}", pressure),
+                None => "".to_string(),
+            },
             w.sunrise,
             w.sunset,
             w.season
@@ -35,9 +44,21 @@ fn print_table(meda_list: &[MedaSol]) {
             vec![
                 w.terrestrial_date.cell(),
                 w.sol.cell(),
-                w.max_temp.cell(),
-                w.min_temp.cell(),
-                w.pressure.cell(),
+                match w.max_temp {
+                    Some(mx) => format!("{}", mx),
+                    None => "".to_string(),
+                }
+                .cell(),
+                match w.min_temp {
+                    Some(mn) => format!("{}", mn),
+                    None => "".to_string(),
+                }
+                .cell(),
+                match w.pressure {
+                    Some(p) => format!("{}", p),
+                    None => "".to_string(),
+                }
+                .cell(),
                 w.sunrise.clone().cell(),
                 w.sunset.clone().cell(),
                 w.season.clone().cell(),

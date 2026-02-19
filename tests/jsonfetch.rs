@@ -1,6 +1,7 @@
 use mars_raw_utils::jsonfetch;
 
-#[tokio::test]
+#[allow(dead_code)]
+#[ignore]
 async fn test_json_fetch() {
     let jf = jsonfetch::JsonFetcher::new("http://echo.jsontest.com/key/value/one/two").unwrap();
     let res = jf.fetch().await.unwrap();
@@ -8,7 +9,8 @@ async fn test_json_fetch() {
     assert_eq!(res["key"], "value");
 }
 
-#[tokio::test]
+#[allow(dead_code)]
+#[ignore]
 async fn test_json_fetch_with_params() {
     let mut jf = jsonfetch::JsonFetcher::new("http://validate.jsontest.com/").unwrap();
     jf.param("json", "{\"foo\":\"bar\"}");

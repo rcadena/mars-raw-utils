@@ -1,5 +1,6 @@
 use crate::{constants, util::string_is_valid_f64};
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Deserializer};
 use string_builder::Builder;
 
 fn vec_to_str(v: &[f64]) -> String {
@@ -33,6 +34,29 @@ fn str_to_vec(s: &str) -> Result<Vec<f64>> {
         }
     }
     Ok(tuple_vec)
+}
+
+// A simple deserializer to return default if there is an error
+pub fn default_on_error<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Deserialize<'de> + Default,
+    D: Deserializer<'de>,
+{
+    Ok(Option::<T>::deserialize(deserializer)
+        .map(|opt| opt.unwrap_or_default())
+        .unwrap_or_default())
+}
+
+// A simple deserializer to return None if there is an error
+pub fn none_on_error<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    T: Deserialize<'de> + Default,
+    D: Deserializer<'de>,
+{
+    match Option::<T>::deserialize(deserializer).map(|opt| opt.unwrap_or_default()) {
+        Ok(v) => Ok(Some(v)),
+        Err(_) => Ok(None),
+    }
 }
 
 //////////////////////////////////////////////////
@@ -336,6 +360,46 @@ pub mod as_df_doy {
     }
 }
 
+// https://serde.rs/custom-date-format.html
+pub mod as_df_doy_opt {
+    use chrono::{DateTime, FixedOffset};
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "%Y-%jT%H:%M:%S%.3f %z";
+
+    pub fn serialize<S>(
+        date: &Option<DateTime<FixedOffset>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = if let Some(s) = date {
+            format!("{}", s.format(FORMAT))
+        } else {
+            "".to_string()
+        };
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<DateTime<FixedOffset>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        if s.is_empty() {
+            Ok(None)
+        } else {
+            match DateTime::parse_from_str(&format!("{} +0000", s), FORMAT)
+                .map_err(serde::de::Error::custom)
+            {
+                Ok(v) => Ok(Some(v)),
+                Err(why) => Err(why),
+            }
+        }
+    }
+}
+
 //////////////////////////////////////////////////
 // Simple Date Format, e.g. 2023-12-03
 //////////////////////////////////////////////////
@@ -365,6 +429,45 @@ pub mod as_df_date {
         } else {
             DateTime::parse_from_str(&format!("{}T00:00:00.000 +0000", s), FORMAT)
                 .map_err(serde::de::Error::custom)
+        }
+    }
+}
+
+pub mod as_df_date_opt {
+    use chrono::{DateTime, FixedOffset};
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.3f %z";
+
+    pub fn serialize<S>(
+        date: &Option<DateTime<FixedOffset>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let s = if let Some(s) = date {
+            format!("{}", s.format(FORMAT))
+        } else {
+            "".to_string()
+        };
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<DateTime<FixedOffset>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        if s.is_empty() {
+            Ok(None)
+        } else {
+            match DateTime::parse_from_str(&format!("{}T00:00:00.000 +0000", s), FORMAT)
+                .map_err(serde::de::Error::custom)
+            {
+                Ok(v) => Ok(Some(v)),
+                Err(why) => Err(why),
+            }
         }
     }
 }

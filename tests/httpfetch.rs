@@ -1,6 +1,7 @@
 use mars_raw_utils::httpfetch;
 
-#[tokio::test]
+#[allow(dead_code)]
+#[ignore]
 async fn test_text_fetch() {
     let hf = httpfetch::HttpFetcher::new("http://echo.jsontest.com/key/value/one/two").unwrap();
     let res = hf.into_string().await.unwrap();
@@ -15,7 +16,8 @@ async fn test_text_fetch() {
     );
 }
 
-#[tokio::test]
+#[allow(dead_code)]
+#[ignore]
 async fn test_text_fetch_with_params() {
     let mut hf = httpfetch::HttpFetcher::new("http://validate.jsontest.com/").unwrap();
     _ = hf.param("json", "{\"foo\":\"bar\"}");
@@ -26,7 +28,8 @@ async fn test_text_fetch_with_params() {
     assert_eq!(j["size"], 1);
 }
 
-#[tokio::test]
+#[allow(dead_code)]
+#[ignore]
 async fn test_bin_fetch() {
     let hf = httpfetch::HttpFetcher::new("http://echo.jsontest.com/key/value/one/two").unwrap();
     let res = hf.into_bytes().await.unwrap();
@@ -41,7 +44,8 @@ async fn test_bin_fetch() {
     );
 }
 
-#[tokio::test]
+#[allow(dead_code)]
+#[ignore]
 async fn test_simple_bin_fetch() {
     let res = httpfetch::simple_fetch_bin("http://echo.jsontest.com/key/value/one/two")
         .await

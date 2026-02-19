@@ -189,7 +189,7 @@ fn process_band(
             if mnmx.min.abs() < mnmx.max.abs() {
                 blurred.clip_mut(mnmx.min, mnmx.min.abs());
             } else {
-                blurred.clip_mut(-1.0 * mnmx.max, mnmx.max);
+                blurred.clip_mut(-mnmx.max, mnmx.max);
             }
 
             blurred.add_across_mut(mean_band.mean());
@@ -355,10 +355,7 @@ pub struct DiffGif {
 }
 
 pub fn process(params: &DiffGif) -> Result<()> {
-    let mean_stack = match generate_mean_stack(&params.input_files) {
-        Ok(mean_stack) => mean_stack,
-        Err(why) => return Err(why),
-    };
+    let mean_stack = generate_mean_stack(&params.input_files)?;
 
     let height = match params.product_type {
         ProductType::STACKED => mean_stack.height * 2,

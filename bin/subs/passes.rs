@@ -36,7 +36,7 @@ impl RunnableSubcommand for Passes {
                             .lander
                             .iter()
                             .any(|l| overflight.spacecraft_lander.contains(l)))
-                    && !overflight.request_type.is_empty()
+                    && overflight.request_type.is_some()
                     && (!self.future || now < overflight.start_time)
             })
             .map(|overflight| {
@@ -48,7 +48,10 @@ impl RunnableSubcommand for Passes {
                     overflight.maximum_elevation.cell(),
                     overflight.rise_set_duration.cell(),
                     overflight.maximum_elevation_range.cell(),
-                    overflight.request_data_volume_returned.cell(),
+                    match overflight.request_data_volume_returned {
+                        Some(rdvr) => rdvr.cell(),
+                        None => "".cell(),
+                    },
                 ]
             })
             .collect::<Vec<_>>()

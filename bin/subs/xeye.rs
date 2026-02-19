@@ -62,6 +62,8 @@ impl OpenFromBytes for Image {
 
 trait GetCameraModel {
     fn get_camera_model(&self) -> Option<CameraModel>;
+
+    #[allow(dead_code)]
     fn has_camera_model(&self) -> bool;
     fn implements_linearized(&self) -> bool;
 }

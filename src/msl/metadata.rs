@@ -169,10 +169,7 @@ impl ImageMetadata for ImageRecord {
 
     fn get_mast_az(&self) -> Option<f64> {
         if let Some(ref mast_az_string) = self.extended.mast_az {
-            match mast_az_string.parse::<f64>() {
-                Ok(v) => Some(v),
-                Err(_) => None,
-            }
+            mast_az_string.parse::<f64>().ok()
         } else {
             None
         }
@@ -180,10 +177,7 @@ impl ImageMetadata for ImageRecord {
 
     fn get_mast_el(&self) -> Option<f64> {
         if let Some(ref mast_el_string) = self.extended.mast_el {
-            match mast_el_string.parse::<f64>() {
-                Ok(v) => Some(v),
-                Err(_) => None,
-            }
+            mast_el_string.parse::<f64>().ok()
         } else {
             None
         }

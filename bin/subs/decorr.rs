@@ -31,6 +31,7 @@ pub struct DecorrelationStretch {
     ignore_black: bool,
 }
 
+#[allow(dead_code)]
 trait NormalizeRgbImageSingleChannels {
     fn normalize_to(&mut self, to_min: f32, to_max: f32);
     fn normalize_band_to_with_min_max(
@@ -75,6 +76,7 @@ impl NormalizeRgbImageSingleChannels for Image {
     }
 }
 
+#[allow(dead_code)]
 trait MinMaxIgnoreBlack {
     fn get_min_max_ignore_black(&self) -> MinMax;
 }
@@ -82,11 +84,11 @@ trait MinMaxIgnoreBlack {
 impl MinMaxIgnoreBlack for ImageBuffer {
     fn get_min_max_ignore_black(&self) -> MinMax {
         let mut mm = MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         };
         (0..self.buffer.len()).for_each(|i| {
-            if self.buffer[i] != std::f32::INFINITY && self.buffer[i] > 0.0 {
+            if self.buffer[i] != f32::INFINITY && self.buffer[i] > 0.0 {
                 mm.min = min!(mm.min, self.buffer[i]);
                 mm.max = max!(mm.max, self.buffer[i]);
             }
@@ -112,16 +114,16 @@ fn color_range_determine_prep(image: &Image) -> Image {
 fn cross_file_decorrelation(input_files: &[PathBuf], ignore_black: bool) {
     let ranges_mtx = Arc::new(Mutex::new(vec![
         MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         },
         MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         },
         MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         },
     ]));
 

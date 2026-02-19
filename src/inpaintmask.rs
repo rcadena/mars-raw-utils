@@ -23,10 +23,7 @@ fn load_mask_file(filename: &str, instrument: enums::Instrument) -> Result<Image
         return Err(anyhow!(constants::status::FILE_NOT_FOUND));
     }
 
-    let mask = match memcache::load_imagebuffer(filename) {
-        Ok(m) => m,
-        Err(e) => return Err(e),
-    };
+    let mask = memcache::load_imagebuffer(filename)?;
 
     match instrument {
         enums::Instrument::MslMAHLI => mask.get_subframe(32, 16, 1584, 1184),
@@ -35,10 +32,7 @@ fn load_mask_file(filename: &str, instrument: enums::Instrument) -> Result<Image
 }
 
 pub fn load_mask(instrument: enums::Instrument) -> Result<ImageBuffer> {
-    let mask_file = match determine_mask_file(instrument) {
-        Ok(m) => m,
-        Err(e) => return Err(e),
-    };
+    let mask_file = determine_mask_file(instrument)?;
 
     load_mask_file(mask_file.as_str(), instrument)
 }
