@@ -1,13 +1,9 @@
 use crate::constants;
 use crate::enums::Mission;
 use crate::httpfetch;
-use crate::m20::fetch::M20Fetch;
 use crate::metadata::Metadata;
-use crate::msl::fetch::MslFetch;
-use crate::nsyt::fetch::NsytFetch;
 use crate::util::{save_image_json, InstrumentMap};
 use anyhow::Result;
-use async_trait::async_trait;
 use cli_table::{Cell, Style, Table};
 use rayon::prelude::*;
 use sciimg::path;
@@ -118,7 +114,7 @@ pub async fn fetch_image(
 }
 
 /// Defines the required methods needed to implement a mission-specific remote raw image query service client
-#[async_trait]
+#[allow(async_fn_in_trait)]
 pub trait Fetch {
     /// Query the remote image service with the supplied parameters
     async fn query_remote_images(&self, query: &RemoteQuery) -> Result<Vec<Metadata>, FetchError>;
@@ -135,19 +131,6 @@ pub trait Fetch {
     /// Return a mission-specific map of supported instruments. Each bottom-level string should match
     /// a supported instrument string on the remote api
     fn make_instrument_map(&self) -> InstrumentMap;
-}
-
-/// Create a new remote client specific to the provided mission.
-///
-/// Note: this mod shouldn't know about m20/msl/nsyt/etc. Look into an auto-registration that
-/// is done from each mission code.
-pub fn get_fetcher_for_mission(mission: Mission) -> Result<FetchType, FetchError> {
-    match mission {
-        Mission::Mars2020 => Ok(M20Fetch::new_boxed()),
-        Mission::MSL => Ok(MslFetch::new_boxed()),
-        Mission::InSight => Ok(NsytFetch::new_boxed()),
-        _ => Err(FetchError::MissionNotSupportedError(mission)),
-    }
 }
 
 macro_rules! nulltostr {
@@ -232,69 +215,63 @@ type OnTotalKnown = fn(usize);
 // Callback to inform the caller that an image has been downloaded
 type OnImageDownloaded = fn(&Metadata);
 
-pub async fn perform_fetch(
-    mission: Mission,
+pub async fn fetch_available<T: Fetch>(
+    client: &T,
+    query: &RemoteQuery,
+) -> Result<Vec<Metadata>, FetchError> {
+    client.query_remote_images(query).await
+}
+
+pub async fn perform_fetch<T: Fetch>(
+    client: &T,
     query: &RemoteQuery,
     on_total_known: OnTotalKnown,
     on_image_downloaded: OnImageDownloaded,
 ) -> Result<(), FetchError> {
-    if let Ok(client) = get_fetcher_for_mission(mission) {
-        match client.query_remote_images(query).await {
-            Ok(results) => {
-                // print a table of all the results.
-                print_table(&results, query);
+    match fetch_available(client, query).await {
+        Ok(results) => {
+            // print a table of all the results.
+            print_table(&results, query);
 
-                // Iterate over the results and remove existing images
-                // if the user has selected to skip any images that already exist locally
-                let to_download: Vec<Metadata> = results
-                    .into_iter()
-                    .filter(|_| !query.list_only)
-                    .filter(|md| {
-                        !query.only_new
-                            || !image_exists_on_filesystem(
-                                &md.remote_image_url,
-                                Some(&query.output_path),
-                            )
+            // Iterate over the results and remove existing images
+            // if the user has selected to skip any images that already exist locally
+            let to_download: Vec<Metadata> = results
+                .into_iter()
+                .filter(|_| !query.list_only)
+                .filter(|md| {
+                    !query.only_new
+                        || !image_exists_on_filesystem(
+                            &md.remote_image_url,
+                            Some(&query.output_path),
+                        )
+                })
+                .collect();
+
+            // Don't bother with the result if we have nothing to download
+            if !to_download.is_empty() {
+                on_total_known(to_download.len());
+
+                let tasks: Vec<_> = to_download
+                    .par_iter()
+                    .map(|md| {
+                        info!("Fetching Image from Remote URL: {}", md.remote_image_url);
+                        download_remote_image(md, query, on_image_downloaded)
                     })
                     .collect();
-
-                // Don't bother with the result if we have nothing to download
-                if !to_download.is_empty() {
-                    on_total_known(to_download.len());
-
-                    let tasks: Vec<_> = to_download
-                        .par_iter()
-                        .map(|md| {
-                            info!("Fetching Image from Remote URL: {}", md.remote_image_url);
-                            download_remote_image(md, query, on_image_downloaded)
-                        })
-                        .collect();
-                    for task in tasks {
-                        task.await?;
-                    }
+                for task in tasks {
+                    task.await?;
                 }
             }
-            Err(why) => error!("Error: {}", why),
-        };
-
-        Ok(())
-    } else {
-        Err(FetchError::MissionNotSupportedError(mission))
+            Ok(())
+        }
+        Err(why) => Err(why),
     }
 }
 
-pub async fn get_latest(mission: Mission) -> Result<Box<dyn LatestData>, FetchError> {
-    if let Ok(client) = get_fetcher_for_mission(mission) {
-        client.fetch_latest().await
-    } else {
-        Err(FetchError::MissionNotSupportedError(mission))
-    }
+pub async fn get_latest<T: Fetch>(client: &T) -> Result<Box<dyn LatestData>, FetchError> {
+    client.fetch_latest().await
 }
 
-pub fn get_instrument_map(mission: Mission) -> Result<InstrumentMap, FetchError> {
-    if let Ok(client) = get_fetcher_for_mission(mission) {
-        Ok(client.make_instrument_map())
-    } else {
-        Err(FetchError::MissionNotSupportedError(mission))
-    }
+pub fn get_instrument_map<T: Fetch>(client: &T) -> Result<InstrumentMap, FetchError> {
+    Ok(client.make_instrument_map())
 }

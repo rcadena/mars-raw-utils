@@ -66,7 +66,7 @@ macro_rules! pb_set_print {
 #[macro_export]
 macro_rules! pb_set_length {
     ($x: expr) => {
-        PB.set_length($x as u64);
+        PB.set_length($x as u64)
     };
 }
 
@@ -92,6 +92,14 @@ macro_rules! pb_inc_by {
 macro_rules! pb_inc {
     () => {
         PB.inc(1)
+    };
+}
+
+/// Increment the progress bar by one
+#[macro_export]
+macro_rules! pb_set_zero {
+    () => {
+        PB.set_position(0)
     };
 }
 

@@ -179,7 +179,7 @@ pub struct Composite {
 impl Composite {
     /// Constructs a new `Composite` instance, creating an image canvas of the size indicated by
     /// the tiles scale factor and coordinates
-    pub fn new(tiles: &Vec<NavcamTile>) -> Self {
+    pub fn new(tiles: &[NavcamTile]) -> Self {
         if tiles.is_empty() {
             panic!("Cannot assemble composite with no tiles!");
         }

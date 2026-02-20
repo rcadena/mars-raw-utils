@@ -1,9 +1,13 @@
-use crate::subs::runnable::RunnableSubcommand;
+use std::process;
+
 use anyhow::Result;
 use clap::Parser;
-use mars_raw_utils::prelude::*;
 use sciimg::path;
-use std::process;
+
+use mars_raw_utils::msl::fetch::MslFetch as MslFetchClient;
+use mars_raw_utils::prelude::*;
+
+use crate::subs::runnable::RunnableSubcommand;
 
 pb_create!();
 
@@ -47,12 +51,13 @@ pub struct MslFetch {
     new: bool,
 }
 
-#[async_trait::async_trait]
 impl RunnableSubcommand for MslFetch {
     async fn run(&self) -> Result<()> {
         pb_set_print!();
 
-        let instruments = remotequery::get_instrument_map(Mission::MSL).unwrap();
+        let client = MslFetchClient::new();
+
+        let instruments = remotequery::get_instrument_map(&client).unwrap();
         if self.instruments {
             instruments.print_instruments();
             process::exit(0);
@@ -124,7 +129,7 @@ impl RunnableSubcommand for MslFetch {
         };
 
         match remotequery::perform_fetch(
-            Mission::MSL,
+            &client,
             &remotequery::RemoteQuery {
                 cameras,
                 num_per_page,
@@ -139,12 +144,8 @@ impl RunnableSubcommand for MslFetch {
                 product_types: vec![],
                 output_path: output,
             },
-            |total| {
-                pb_set_length!(total);
-            },
-            |_| {
-                pb_inc!();
-            },
+            |total| pb_set_length!(total),
+            |_| pb_inc!(),
         )
         .await
         {

@@ -1,7 +1,10 @@
-use crate::subs::runnable::RunnableSubcommand;
 use anyhow::Result;
 use clap::Parser;
+
 use mars_raw_utils::caldata;
+
+use crate::subs::runnable::RunnableSubcommand;
+
 pb_create!();
 
 #[derive(Parser)]
@@ -14,16 +17,14 @@ pub struct UpdateCalData {
     local_store: Option<String>,
 }
 
-#[async_trait::async_trait]
 impl RunnableSubcommand for UpdateCalData {
     async fn run(&self) -> Result<()> {
         pb_set_print!();
+
         match caldata::update_calibration_data(
             !self.noreplace,
             &self.local_store,
-            |t| {
-                pb_set_length!(t);
-            },
+            |total| pb_set_length!(total),
             || pb_inc!(),
         )
         .await

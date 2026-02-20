@@ -1,5 +1,5 @@
+use crate::serializers::{as_cahvore, as_tuple};
 use crate::{constants, metadata::*};
-
 use sciimg::prelude::*;
 
 use std::fs::File;
@@ -27,31 +27,31 @@ pub struct ImageRecord {
     pub extended: Extended,
     pub id: u32,
 
-    #[serde(with = "crate::jsonfetch::tuple_format")]
+    #[serde(with = "as_tuple")]
     pub camera_vector: Option<Vec<f64>>,
     pub site: Option<u32>,
     pub imageid: String,
 
-    #[serde(with = "crate::jsonfetch::tuple_format")]
+    #[serde(with = "as_tuple")]
     pub subframe_rect: Option<Vec<f64>>,
     pub sol: u32,
     pub scale_factor: Option<u32>,
 
-    #[serde(with = "crate::jsonfetch::cahvor_format")]
+    #[serde(with = "as_cahvore")]
     pub camera_model_component_list: CameraModel,
     pub instrument: String,
     pub url: String,
     pub spacecraft_clock: Option<f64>,
 
-    #[serde(with = "crate::jsonfetch::tuple_format")]
+    #[serde(with = "as_tuple")]
     pub attitude: Option<Vec<f64>>,
 
-    #[serde(with = "crate::jsonfetch::tuple_format")]
+    #[serde(with = "as_tuple")]
     pub camera_position: Option<Vec<f64>>,
     pub camera_model_type: Option<String>,
     pub drive: Option<u32>,
 
-    #[serde(with = "crate::jsonfetch::tuple_format")]
+    #[serde(with = "as_tuple")]
     pub xyz: Option<Vec<f64>>,
     pub created_at: String,
     pub updated_at: String,
@@ -169,10 +169,7 @@ impl ImageMetadata for ImageRecord {
 
     fn get_mast_az(&self) -> Option<f64> {
         if let Some(ref mast_az_string) = self.extended.mast_az {
-            match mast_az_string.parse::<f64>() {
-                Ok(v) => Some(v),
-                Err(_) => None,
-            }
+            mast_az_string.parse::<f64>().ok()
         } else {
             None
         }
@@ -180,10 +177,7 @@ impl ImageMetadata for ImageRecord {
 
     fn get_mast_el(&self) -> Option<f64> {
         if let Some(ref mast_el_string) = self.extended.mast_el {
-            match mast_el_string.parse::<f64>() {
-                Ok(v) => Some(v),
-                Err(_) => None,
-            }
+            mast_el_string.parse::<f64>().ok()
         } else {
             None
         }
@@ -199,6 +193,10 @@ impl ImageMetadata for ImageRecord {
 
     fn get_remote_image_url(&self) -> String {
         self.url.clone()
+    }
+
+    fn get_attitude(&self) -> Option<Vec<f64>> {
+        self.attitude.clone()
     }
 }
 

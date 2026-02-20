@@ -7,7 +7,6 @@ use crate::remotequery::FetchError;
 use crate::util::{stringvec, stringvec_b, InstrumentMap};
 use crate::{f, t};
 use anyhow::Result;
-use async_trait::async_trait;
 use futures::future;
 use serde::{Deserialize, Serialize};
 use tokio;
@@ -56,7 +55,7 @@ impl remotequery::LatestData for M20LatestData {
 
 /// Submits a query to the M20 api endpoint
 async fn submit_query(query: &remotequery::RemoteQuery) -> Result<String> {
-    let joined_cameras = query.cameras.join("|");
+    let joined_cameras = query.cameras.join("%7C");
 
     let mut category = "mars2020";
     if query.cameras.contains(&String::from("HELI_NAV"))
@@ -84,8 +83,6 @@ async fn submit_query(query: &remotequery::RemoteQuery) -> Result<String> {
     let mut extended: Vec<String> = vec![];
     if query.thumbnails {
         extended.push("sample_type::thumbnail".into());
-    } else {
-        extended.push("sample_type::full".into());
     }
 
     if query.movie_only {
@@ -150,13 +147,8 @@ impl M20Fetch {
     pub fn new() -> M20Fetch {
         M20Fetch {}
     }
-
-    pub fn new_boxed() -> remotequery::FetchType {
-        Box::new(M20Fetch::new())
-    }
 }
 
-#[async_trait]
 impl remotequery::Fetch for M20Fetch {
     async fn query_remote_images(
         &self,

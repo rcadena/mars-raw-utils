@@ -1,11 +1,13 @@
-use crate::{decompanding::LookUpTable, enums, flatfield, inpaintmask, metadata::*, util};
+use std::env;
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use sciimg::{
     debayer::DebayerMethod, drawable::Drawable, enums::ImageMode, image::Image,
     imagebuffer::ImageBuffer, inpaint, path, DnVec, VecMath,
 };
-use std::env;
+
+use crate::{decompanding::LookUpTable, enums, flatfield, inpaintmask, metadata::*, util};
+use image::ImageReader;
 
 #[derive(Clone)]
 pub struct MarsImage {
@@ -67,6 +69,37 @@ impl MarsImage {
         }
     }
 
+    fn is_jpeg(file_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        let reader = ImageReader::open(file_path)?.with_guessed_format()?;
+
+        Ok(matches!(reader.format(), Some(image::ImageFormat::Jpeg)))
+    }
+
+    pub fn open_dct_coefficient_fix(file_path: &str, instrument: enums::Instrument) -> Self {
+        if !path::file_exists(file_path) {
+            panic!("File not found: {}", file_path);
+        }
+
+        // We can only use this method if the input file is a jpeg. We use the image create to determine
+        // this. If it is a jpeg, great, otherwise fallback to the MarsImage::open function.
+        if match Self::is_jpeg(file_path) {
+            Err(why) => panic!("Cannot determine image type: {:?}", why),
+            Ok(d) => d,
+        } {
+            // Load the jpeg
+            MarsImage {
+                image: Image::open_bayer_jpeg(file_path, true).unwrap(),
+                instrument,
+                metadata: MarsImage::load_image_metadata(file_path),
+                empty: false,
+                file_path: Some(file_path.to_owned()),
+            }
+        } else {
+            // Otherwise fall back on the standard loading
+            MarsImage::open(file_path, instrument)
+        }
+    }
+
     fn load_image_metadata(file_path: &str) -> Metadata {
         let metadata_file = util::replace_image_extension(file_path, "-metadata.json");
         info!("Checking for metadata file at {}", metadata_file);
@@ -98,10 +131,10 @@ impl MarsImage {
             info!("File saved.");
             Ok(())
         } else {
-            Err(anyhow!(
+            Err(Error::msg(format!(
                 "Parent does not exist or cannot be written: {}",
                 path::get_parent(to_file)
-            ))
+            )))
         }
     }
 

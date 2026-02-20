@@ -40,7 +40,6 @@ pub struct DiffGif {
     lightonly: bool,
 }
 
-#[async_trait::async_trait]
 impl RunnableSubcommand for DiffGif {
     async fn run(&self) -> Result<()> {
         pb_set_print!();
@@ -100,7 +99,7 @@ impl RunnableSubcommand for DiffGif {
 
         debug!("Processing on files: {:?}", in_files);
 
-        diffgif::process(&diffgif::DiffGif {
+        if let Err(why) = diffgif::process(&diffgif::DiffGif {
             input_files: in_files,
             output: String::from(output),
             product_type,
@@ -111,7 +110,9 @@ impl RunnableSubcommand for DiffGif {
             lowpass_window_size,
             convert_to_mono: self.mono,
             light_only: self.lightonly,
-        });
+        }) {
+            eprintln!("Failed to generate diffgif: {:?}", why);
+        }
         pb_done!();
         Ok(())
     }

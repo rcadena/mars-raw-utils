@@ -7,11 +7,18 @@ use mars_raw_utils::prelude::*;
 #[command(author, version, about = "Get current Mars2020 mission date information", long_about = None)]
 pub struct M20Date {}
 
-#[async_trait::async_trait]
 impl RunnableSubcommand for M20Date {
     async fn run(&self) -> Result<()> {
         match time::get_lmst(Mission::Mars2020) {
             Ok(mtime) => {
+                println!(
+                    "Earth Time (UTC):       {}",
+                    mtime.earth_time_utc.format("%a, %e %b %Y %T %Z")
+                );
+                println!(
+                    "Earth DOY (UTC):        {}",
+                    mtime.earth_time_utc.format("%Y-%jT%T%.3f")
+                );
                 println!("Mars Sol Date:          {}", mtime.msd);
                 println!("Coordinated Mars Time:  {}", mtime.mtc_display);
                 println!("Mission Sol:            {}", mtime.sol);

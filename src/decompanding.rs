@@ -75,12 +75,14 @@ impl LookUpTable {
     pub fn new(lut: &[u32; 256]) -> LookUpTable {
         LookUpTable { lut: lut.to_vec() }
     }
-    pub fn new_from_vec(lut: &Vec<u32>) -> Result<LookUpTable> {
+    pub fn new_from_vec(lut: &[u32]) -> Result<LookUpTable> {
         info!("Creating LUT with input of length {}", lut.len());
         if lut.len() != 256 {
             Err(anyhow!("Invalid LUT specification length"))
         } else {
-            Ok(LookUpTable { lut: lut.clone() })
+            Ok(LookUpTable {
+                lut: lut.to_owned(),
+            })
         }
     }
     pub fn max(&self) -> u32 {

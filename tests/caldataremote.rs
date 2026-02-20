@@ -61,11 +61,10 @@ async fn test_fetch_remote_calibration_resource() {
         assert!(!c.is_empty());
 
         // Find and return a single png to fetch
-        let test_image = c
-            .iter()
-            .filter(|p| p.ends_with(".png"))
-            .last()
-            .expect("Failed to extract a png to test with");
+        let test_image = match c.iter().rfind(|p| p.ends_with(".png")) {
+            Some(ti) => ti,
+            None => panic!("Failed to find test image"),
+        };
 
         // Did that filter do it's job?
         assert!(test_image.ends_with(".png"));

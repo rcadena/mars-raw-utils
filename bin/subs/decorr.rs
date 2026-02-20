@@ -10,6 +10,7 @@ use sciimg::prelude::*;
 use sciimg::MinMax;
 use std::path::PathBuf;
 use std::process;
+use std::sync::{Arc, Mutex};
 
 pb_create!();
 
@@ -30,6 +31,7 @@ pub struct DecorrelationStretch {
     ignore_black: bool,
 }
 
+#[allow(dead_code)]
 trait NormalizeRgbImageSingleChannels {
     fn normalize_to(&mut self, to_min: f32, to_max: f32);
     fn normalize_band_to_with_min_max(
@@ -74,6 +76,7 @@ impl NormalizeRgbImageSingleChannels for Image {
     }
 }
 
+#[allow(dead_code)]
 trait MinMaxIgnoreBlack {
     fn get_min_max_ignore_black(&self) -> MinMax;
 }
@@ -81,11 +84,11 @@ trait MinMaxIgnoreBlack {
 impl MinMaxIgnoreBlack for ImageBuffer {
     fn get_min_max_ignore_black(&self) -> MinMax {
         let mut mm = MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         };
         (0..self.buffer.len()).for_each(|i| {
-            if self.buffer[i] != std::f32::INFINITY && self.buffer[i] > 0.0 {
+            if self.buffer[i] != f32::INFINITY && self.buffer[i] > 0.0 {
                 mm.min = min!(mm.min, self.buffer[i]);
                 mm.max = max!(mm.max, self.buffer[i]);
             }
@@ -108,24 +111,24 @@ fn color_range_determine_prep(image: &Image) -> Image {
     cloned
 }
 
-fn cross_file_decorrelation(input_files: &Vec<PathBuf>, ignore_black: bool) {
-    let mut ranges = vec![
+fn cross_file_decorrelation(input_files: &[PathBuf], ignore_black: bool) {
+    let ranges_mtx = Arc::new(Mutex::new(vec![
         MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         },
         MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         },
         MinMax {
-            min: std::f32::MAX,
-            max: std::f32::MIN,
+            min: f32::MAX,
+            max: f32::MIN,
         },
-    ];
+    ]));
 
     info!("Computing value ranges...");
-    input_files.iter().for_each(|in_file| {
+    input_files.par_iter().for_each(|in_file| {
         if in_file.exists() {
             let image = MarsImage::open(
                 &String::from(in_file.as_os_str().to_str().unwrap()),
@@ -134,20 +137,29 @@ fn cross_file_decorrelation(input_files: &Vec<PathBuf>, ignore_black: bool) {
 
             let prepped = color_range_determine_prep(&image.image);
 
-            for b in 0..prepped.num_bands() {
+            (0..prepped.num_bands()).for_each(|b| {
                 let mm = match ignore_black {
                     true => prepped.get_band(b).get_min_max_ignore_black(),
                     false => prepped.get_band(b).get_min_max(),
                 };
-                ranges[b].min = min!(mm.min, ranges[b].min);
-                ranges[b].max = max!(mm.max, ranges[b].max);
-            }
+
+                if let Ok(mut ranges) = ranges_mtx.lock() {
+                    ranges[b].min = min!(mm.min, ranges[b].min);
+                    ranges[b].max = max!(mm.max, ranges[b].max);
+                }
+            });
         } else {
             error!("File not found: {:?}", in_file);
             pb_done_with_error!();
             process::exit(1);
         }
+        pb_inc!();
     });
+
+    pb_set_zero!();
+
+    // Mutex no longer needed
+    let ranges = ranges_mtx.lock().unwrap();
 
     input_files.par_iter().for_each(|in_file| {
         if in_file.exists() {
@@ -225,7 +237,6 @@ fn individual_file_decorrelation(input_files: &Vec<PathBuf>, ignore_black: bool)
     });
 }
 
-#[async_trait::async_trait]
 impl RunnableSubcommand for DecorrelationStretch {
     async fn run(&self) -> Result<()> {
         pb_set_print_and_length!(self.input_files.len());

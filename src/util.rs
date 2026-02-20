@@ -71,9 +71,9 @@ macro_rules! min {
     }}
 }
 
-////////////////////////////////////
-/// Functions for supporting instrument lists
-////////////////////////////////////
+// ////////////////////////////////////
+// /// Functions for supporting instrument lists
+// ////////////////////////////////////
 
 pub struct InstrumentMap {
     pub map: HashMap<&'static str, Vec<&'static str>>,
@@ -89,6 +89,14 @@ impl InstrumentMap {
             }
         }
         false
+    }
+
+    pub fn remote_instrument_names(&self) -> Vec<String> {
+        self.map
+            .values()
+            .flatten()
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>()
     }
 
     pub fn find_remote_instrument_names(&self, instrument: &str) -> Result<Vec<String>> {

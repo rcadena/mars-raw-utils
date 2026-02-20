@@ -2,7 +2,7 @@ use crate::{
     calibfile, calibrate::*, calprofile::CalProfile, decompanding, enums, enums::Instrument,
     marsimage::MarsImage, memcache::load_image, util,
 };
-use anyhow::Result;
+use anyhow::{Error, Result};
 use sciimg::{image::Image, path};
 
 #[derive(Copy, Clone)]
@@ -17,7 +17,10 @@ fn get_bias_for_instrument(instrument: Instrument) -> Result<f32> {
         Instrument::M20FrontHazRight => Ok(148.0),
         Instrument::M20RearHazLeft => Ok(118.0),
         Instrument::M20RearHazRight => Ok(132.0),
-        _ => Err(anyhow!("Invalid M20 ECAM instrument: {:?}", instrument)),
+        _ => Err(Error::msg(format!(
+            "Invalid M20 ECAM instrument: {:?}",
+            instrument
+        ))),
     }
 }
 

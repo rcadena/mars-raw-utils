@@ -7,12 +7,19 @@ use mars_raw_utils::prelude::*;
 #[command(author, version, about = "Get current MER mission date information", long_about = None)]
 pub struct MerDate {}
 
-#[async_trait::async_trait]
 impl RunnableSubcommand for MerDate {
     async fn run(&self) -> Result<()> {
         match time::get_lmst(Mission::MerA) {
             Ok(mtime) => {
                 println!("MER-A / Spirit:");
+                println!(
+                    "Earth Time (UTC):       {}",
+                    mtime.earth_time_utc.format("%a, %e %b %Y %T %Z")
+                );
+                println!(
+                    "Earth DOY (UTC):        {}",
+                    mtime.earth_time_utc.format("%Y-%jT%T%.3f")
+                );
                 println!("Mars Sol Date:          {}", mtime.msd);
                 println!("Coordinated Mars Time:  {}", mtime.mtc_display);
                 println!("Mission Sol:            {}", mtime.sol);
@@ -28,6 +35,14 @@ impl RunnableSubcommand for MerDate {
         match time::get_lmst(Mission::MerB) {
             Ok(mtime) => {
                 println!("MER-B / Opportunity:");
+                println!(
+                    "Earth Time (UTC):       {}",
+                    mtime.earth_time_utc.format("%a, %e %b %Y %T %Z")
+                );
+                println!(
+                    "Earth DOY (UTC):        {}",
+                    mtime.earth_time_utc.format("%Y-%jT%T%.3f")
+                );
                 println!("Mars Sol Date:          {}", mtime.msd);
                 println!("Coordinated Mars Time:  {}", mtime.mtc_display);
                 println!("Mission Sol:            {}", mtime.sol);
