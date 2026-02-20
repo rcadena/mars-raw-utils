@@ -1,6 +1,6 @@
 [package]
 name = "mars_raw_utils"
-version = "0.8.3"
+version = "0.9.0"
 authors = ["Kevin M. Gill <apoapsys@gmail.com>"]
 edition = "2021"
 description = "Utilities for working with publicly available raw MSL, Mars2020, and InSight images"
@@ -12,7 +12,7 @@ exclude = ["mars-raw-utils-data"]
 
 [package.metadata.deb]
 maintainer = "Kevin M. Gill <apoapsys@gmail.com>"
-copyright = "2023, Kevin M. Gill <apoapsys@gmail.com>"
+copyright = "2026, Kevin M. Gill <apoapsys@gmail.com>"
 license-file = ["LICENSE", "2"]
 extended-description = "Utilities for working with publicly available raw MSL, Mars2020, and InSight images"
 depends = "$auto"
@@ -116,7 +116,7 @@ lab = "0.11.0"
 toml = "0.9.8"
 serde = { version = "1.0.125", features = ["derive"] }
 string-builder = "0.2.0"
-sciimg = { git = "https://github.com/MarsRaw/sciimg.git", branch = "kmgill_develop", features = [
+sciimg = { git = "https://github.com/MarsRaw/sciimg.git", branch = "main", features = [
     "rayon",
 ] }
 #sciimg = {path = "../sciimg", features = [ "rayon", ]}
