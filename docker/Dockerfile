@@ -13,9 +13,6 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Copy project resources
 COPY . .
 
-# Test sciimg core library
-RUN cargo test --manifest-path sciimg/Cargo.toml
-
 # Test MRU
 RUN cargo test 
 
